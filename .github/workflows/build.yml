@@ -269,6 +269,11 @@ jobs:
         id: build
         run: |
           touch build.json
+          nix-copy-closure \
+            --use-substitutes \
+            --to ssh-ng://eu.nixbuild.net \
+            $(type -p "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}")
+
           nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
             --print-build-logs \
             --eval-store auto \
