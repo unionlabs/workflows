@@ -201,6 +201,13 @@ on:
         description: |
           Use git-lfs when checking out the repository for the build job. 
           See: https://github.com/actions/checkout
+      
+      remote_builds:
+        type: boolean
+        default: true
+        required: false
+        description: |
+          If remote builds should be used, or instead built the outputs locally.
 
 jobs:
 
@@ -269,18 +276,23 @@ jobs:
         id: build
         run: |
           touch build.json
-          nix-copy-closure \
-            --use-substitutes \
-            --to ssh-ng://eu.nixbuild.net \
-            $(type -p "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}")
 
-          nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
-            --print-build-logs \
-            --eval-store auto \
-            --store ssh-ng://eu.nixbuild.net \
-            --builders "" --max-jobs 2 \
-            --json > build.json \
-            2> >(tee -a build.log >&2) || true
+          if [[ ${{ inputs.remote_builds }} = true ]]; then
+            echo "building in remote store"
+            nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
+              --print-build-logs \
+              --eval-store auto \
+              --store ssh-ng://eu.nixbuild.net \
+              --builders "" --max-jobs 2 \
+              --json > build.json \
+              2> >(tee -a build.log >&2) || true
+          else
+            echo "building locally"
+            nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
+              --print-build-logs \
+              --json > build.json \
+              2> >(tee -a build.log >&2) || true
+          fi 
 
           status=0
           if ! [ -s build.json ]; then
