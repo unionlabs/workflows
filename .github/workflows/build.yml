@@ -276,8 +276,20 @@ jobs:
         id: build
         run: |
           touch build.json
-
+          succeed () {
+            while true
+            do
+              $@ && break
+            done
+          }
           if [[ ${{ inputs.remote_builds }} = true ]]; then
+            echo "setting up ssh config"
+            mkdir -p ~/.ssh
+            echo "Host *" > ~/.ssh/config
+            echo -e "\tServerAliveInterval 600" >> ~/.ssh/config
+            echo -e "\tServerAliveCountMax 100000" >> ~/.ssh/config
+            echo -e "\tTCPKeepAlive no" >> ~/.ssh/config
+            cat ~/.ssh/config
             echo "building in remote store"
             nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
               --print-build-logs \
@@ -288,10 +300,13 @@ jobs:
               2> >(tee -a build.log >&2) || true
           else
             echo "building locally"
-            nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
-              --print-build-logs \
-              --json > build.json \
-              2> >(tee -a build.log >&2) || true
+            while true
+            do
+              nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
+                --print-build-logs \
+                --json > build.json \
+                2> >(tee -a build.log >&2) || true && break
+            done
           fi
 
           status=0
