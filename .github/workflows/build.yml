@@ -9,7 +9,7 @@ on:
           Access token to token protected flakes, for example private github repos.
           Example: github.com=23ac...b289
           See https://nixos.org/manual/nix/unstable/command-ref/conf-file.html#conf-access-tokens
-          for more info.  
+          for more info.
       nixbuild_ssh_key:
         required: false
         description: |
@@ -199,9 +199,9 @@ on:
         default: false
         required: false
         description: |
-          Use git-lfs when checking out the repository for the build job. 
+          Use git-lfs when checking out the repository for the build job.
           See: https://github.com/actions/checkout
-      
+
       remote_builds:
         type: boolean
         default: true
@@ -292,7 +292,7 @@ jobs:
               --print-build-logs \
               --json > build.json \
               2> >(tee -a build.log >&2) || true
-          fi 
+          fi
 
           status=0
           if ! [ -s build.json ]; then
