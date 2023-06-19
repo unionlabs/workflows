@@ -310,7 +310,7 @@ jobs:
               break
             fi
 
-            attempt=$((attempt + 1)) # Incerment attempt
+            attempt=$((attempt + 1)) # Increment attempt
             seconds=$((1 + $RANDOM % 30)) # Get random seconds for minor variance
             echo "Broken pipe detected! will try again in $minutes minutes & $seconds seconds."
             sleeptime=$(($minutes * 60 + seconds)) # Convert to seconds
