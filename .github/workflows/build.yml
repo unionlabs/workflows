@@ -278,6 +278,7 @@ jobs:
           touch build.json
 
           attempt=0
+          minutes=1
           while [ $attempt -lt 3 ]
           do
             # Cleans build.log between attempts
@@ -309,7 +310,12 @@ jobs:
               break
             fi
 
-            attempt=$((attempt + 1))
+            attempt=$((attempt + 1)) # Increment attempt
+            seconds=$((1 + $RANDOM % 30)) # Get random seconds for minor variance
+            echo "Broken pipe detected! will try again in $minutes minutes & $seconds seconds."
+            sleeptime=$(($minutes * 60 + seconds)) # Convert to seconds
+            minutes=$((minutes * 2)) # Double minutes in event of another retry
+            sleep $sleeptime
           done
 
           echo "Attempts: $attempt"
