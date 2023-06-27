@@ -277,23 +277,50 @@ jobs:
         run: |
           touch build.json
 
-          # Runs a build with remote store or (else) just remote builders
-          if [[ ${{ inputs.remote_builds }} = true ]]; then
-            echo "building in remote store"
-            nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
-              --print-build-logs \
-              --eval-store auto \
-              --store ssh-ng://eu.nixbuild.net \
-              --builders "" --max-jobs 2 \
-              --json > build.json \
-              2> >(tee -a build.log >&2) || true
-          else
-            echo "building without remote store"
-            nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
-              --print-build-logs \
-              --json > build.json \
-              2> >(tee -a build.log >&2) || true
-          fi 
+          attempt=0
+          minutes=1
+          while [ $attempt -lt 10 ]
+            do
+            # Runs a build with remote store or (else) just remote builders
+            if [[ ${{ inputs.remote_builds }} = true ]]; then
+              echo "building in remote store"
+              nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
+                --print-build-logs \
+                --eval-store auto \
+                --store ssh-ng://eu.nixbuild.net \
+                --builders "" --max-jobs 2 \
+                --json > build.json \
+                2> >(tee -a build.log >&2) || true
+            else
+              echo "building without remote store"
+              nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
+                --print-build-logs \
+                --json > build.json \
+                2> >(tee -a build.log >&2) || true
+            fi 
+
+            # If build did not fail due to broken pipe, break and continue
+            if ! grep -q "client_loop: send disconnect: Broken pipe" build.log
+            then
+              echo "No broken pipe, ending attempts"
+              break
+            fi
+
+            attempt=$((attempt + 1)) # Increment attempt
+
+            if [ $attempt -lt 10 ]
+            then
+              seconds=$((1 + $RANDOM % 30)) # Get random seconds for minor variance
+              echo "Broken pipe detected! will try again in $minutes minutes & $seconds seconds."
+              sleeptime=$(($minutes * 60 + seconds)) # Convert to seconds
+              minutes=$((minutes * 2)) # Double minutes in event of another retry
+              sleep $sleeptime
+            else
+              echo "Attempts exceeded, job failing"
+            fi
+          done
+
+          echo "Attempts: $attempt"
 
           status=0
           if ! [ -s build.json ]; then
