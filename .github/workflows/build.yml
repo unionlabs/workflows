@@ -310,9 +310,8 @@ jobs:
 
             if [ $attempt -lt 10 ]
             then
-              seconds=$((1 + $RANDOM % 30)) # Get random seconds for minor variance
               echo "Broken pipe detected! will try again in $minutes minutes & $seconds seconds."
-              sleeptime=$(($minutes * 60 + seconds)) # Convert to seconds
+              sleeptime=$($minutes * 60) # Convert to seconds
               minutes=$((minutes * 2)) # Double minutes in event of another retry
               sleep $sleeptime
             else
