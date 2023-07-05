@@ -310,9 +310,9 @@ jobs:
 
             if [ $attempt -lt 10 ]
             then
-              echo "Broken pipe detected! will try again in $minutes minutes & $seconds seconds."
-              sleeptime=$($minutes * 60) # Convert to seconds
-              minutes=$((minutes * 1.5))
+              echo "Broken pipe detected! Will try again in $minutes minutes."
+              sleeptime=$((minutes * 60)) # Convert to seconds
+              minutes=$((minutes + 1)) # Increase delay
               sleep $sleeptime
             else
               echo "Attempts exceeded, job failing"
