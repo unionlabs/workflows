@@ -290,13 +290,13 @@ jobs:
                 --store ssh-ng://eu.nixbuild.net \
                 --builders "" --max-jobs 2 \
                 --json > build.json \
-                2> >(tee -a build.log >&2) || true
+                2> >(tee build.log >&2) || true
             else
               echo "building without remote store"
               nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
                 --print-build-logs \
                 --json > build.json \
-                2> >(tee -a build.log >&2) || true
+                2> >(tee build.log >&2) || true
             fi 
 
             # If build did not fail due to broken pipe, break and continue
