@@ -202,12 +202,12 @@ on:
           Use git-lfs when checking out the repository for the build job. 
           See: https://github.com/actions/checkout
       
-      remote_builds:
+      remote_store:
         type: boolean
         default: true
         required: false
         description: |
-          If remote builds should be used, or instead built the outputs locally.
+          If remote store should be used, or instead remote builders.
 
 jobs:
 
@@ -282,7 +282,7 @@ jobs:
           while [ $attempt -lt 10 ]
             do
             # Runs a build with remote store or (else) just remote builders
-            if [[ ${{ inputs.remote_builds }} = true ]]; then
+            if [[ ${{ inputs.remote_store }} = true ]]; then
               echo "building in remote store"
               nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
                 --print-build-logs \
