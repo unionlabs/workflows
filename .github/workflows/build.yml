@@ -308,7 +308,7 @@ jobs:
 
             attempt=$((attempt + 1)) # Increment attempt
 
-            if [ $attempt -lt 10 ]
+            if [ $attempt -lt 10 && ! -s build.json ]
             then
               echo "Broken pipe detected! Will try again in $minutes minutes."
               sleeptime=$((minutes * 60)) # Convert to seconds
