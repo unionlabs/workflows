@@ -300,7 +300,7 @@ jobs:
             fi 
 
             # If build did not fail due to broken pipe, break and continue.
-            # If build.json exits, the build compleated.
+            # If build.json exists, the build compleated.
             if ! grep -q "client_loop: send disconnect: Broken pipe" build.log && [ ! -s build.json ]
             then
               echo "No broken pipe, ending attempts"
