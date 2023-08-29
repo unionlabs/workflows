@@ -299,8 +299,9 @@ jobs:
                 2> >(tee build.log >&2) || true
             fi 
 
-            # If build did not fail due to broken pipe, break and continue
-            if ! grep -q "client_loop: send disconnect: Broken pipe" build.log
+            # If build did not fail due to broken pipe, break and continue.
+            # If build.json exists, the build completed.
+            if ! grep -q "client_loop: send disconnect: Broken pipe" build.log && [ ! -s build.json ]
             then
               echo "No broken pipe, ending attempts"
               break
