@@ -261,9 +261,8 @@ jobs:
             experimental-features = nix-command flakes
             access-tokens = ${{ secrets.access-tokens }}
             ${{inputs.nix_conf}}
-      - uses: nixbuild/nixbuild-action@b66a8c62d3ce001b4a4d46e12e5ab53eec809644
+      - uses: nixbuild/nixbuild-action@v19
         with:
-          nixbuild_ssh_key: ${{secrets.nixbuild_ssh_key}}
           nixbuild_token: ${{secrets.nixbuild_token}}
           caches: ${{inputs.caches}}
           reuse-build-failures: ${{inputs.reuse-build-failures}}
@@ -374,8 +373,7 @@ jobs:
           fi
       - name: Generate nixbuild.net summary
         if: ${{ always() && inputs.generate_build_summary }}
-        uses: nixbuild/nixbuild-action@v17
+        uses: nixbuild/nixbuild-action@v19
         with:
-          nixbuild_ssh_key: ${{secrets.nixbuild_ssh_key}}
           nixbuild_token: ${{secrets.nixbuild_token}}
           generate_summary_for: 'workflow'
