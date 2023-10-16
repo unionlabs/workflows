@@ -284,6 +284,7 @@ jobs:
             if [[ ${{ inputs.remote_store }} = true ]]; then
               echo "building in remote store"
               nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
+                --option allow-import-from-derivation false \
                 --print-build-logs \
                 --eval-store auto \
                 --store ssh-ng://eu.nixbuild.net \
@@ -293,6 +294,7 @@ jobs:
             else
               echo "building without remote store"
               nix build "./${{inputs.flake_directory}}#${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}" \
+                --option allow-import-from-derivation false \
                 --print-build-logs \
                 --json > build.json \
                 2> >(tee build.log >&2) || true
