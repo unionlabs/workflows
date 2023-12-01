@@ -277,7 +277,7 @@ jobs:
           touch build.json
 
           echo "Disk usage before"
-          echo $(df -h)
+          echo "$(df -h)"
 
           attempt=0
           minutes=1
@@ -323,7 +323,7 @@ jobs:
           done
 
           echo "Disk usage after"
-          echo $(df -h)
+          echo "$(df -h)"
 
           echo "Attempts: $attempt"
 
