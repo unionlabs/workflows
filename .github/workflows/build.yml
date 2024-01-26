@@ -240,7 +240,7 @@ jobs:
             all_systems=""
           fi
           nix flake show "./${{inputs.flake_directory}}" $all_systems --json > "$flake_json"
-          cat "$flake_json" | jq -rc '{
+          flake_outputs=$(cat "$flake_json" | jq -rc '{
             checks: (.checks // {}), 
             packages: (.packages // {}), 
             devShells: (.devShells // {})
@@ -260,10 +260,12 @@ jobs:
             select(
               ${{inputs.filter_builds}}
             )
-          )'
+          )')
 
+          echo "outputs.txt $LINENO"
           echo $flake_outputs | jq -r '.[] | "\(.top_attr).\(.system).\(.attr)"' > outputs.txt
 
+          echo "loop $LINENO"
           cat outputs.txt | while read line
           do
             attr=$(echo $line | cut -d '.' -f3)
@@ -277,9 +279,11 @@ jobs:
              --arg nar "$nar" \
              'map(if (.attr == $attr) and (.system == $system) and (.top_attr == $top_attr) then .nar = $nar else . end)')
 
+            touch flak_outputs.json
             echo "$flake_outputs" | jq . > flake_outputs.json  
           done
 
+          echo "collect nars $LINENO"
           nar_hashes=$(cat flake_outputs.json | jq 'map(.nar)')
 
           nars_to_build=$(curl -X 'POST' \
