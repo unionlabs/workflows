@@ -282,6 +282,9 @@ jobs:
 
             touch flak_outputs.json
             echo "$flake_outputs" | jq . > flake_outputs.json  
+
+            echo "Disk Usage:"
+            df -h
           done
 
           echo "collect nars $LINENO"
