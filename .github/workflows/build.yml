@@ -264,9 +264,9 @@ jobs:
           )')
 
           touch flake_evals.json
-          nix run github:nix-community/nix-eval-jobs -- --check-cache-status --flake .#packages.x86_64-linux | jq -s 'map(.top_attr = "packages")' >> flake_evals.json
-          nix run github:nix-community/nix-eval-jobs -- --check-cache-status --flake .#checks.x86_64-linux | jq -s 'map(.top_attr = "checks")' >> flake_evals.json
-          nix run github:nix-community/nix-eval-jobs -- --check-cache-status --flake .#devShells.x86_64-linux | jq -s 'map(.top_attr = "checks")' >> flake_evals.json
+          nix run github:nix-community/nix-eval-jobs -- --workers 8 --gc-roots-dir $(pwd)/gcroots --check-cache-status --flake .#packages.x86_64-linux | jq -s 'map(.top_attr = "packages")' >> flake_evals.json
+          nix run github:nix-community/nix-eval-jobs -- --workers 8 --gc-roots-dir $(pwd)/gcroots --check-cache-status --flake .#checks.x86_64-linux | jq -s 'map(.top_attr = "checks")' >> flake_evals.json
+          nix run github:nix-community/nix-eval-jobs -- --workers 8 --gc-roots-dir $(pwd)/gcroots --check-cache-status --flake .#devShells.x86_64-linux | jq -s 'map(.top_attr = "checks")' >> flake_evals.json
 
           jq -s 'add' flake_evals.json > evals.json
 
