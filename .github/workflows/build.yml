@@ -232,7 +232,8 @@ jobs:
         id: find-builds
         run: |
           set -eo pipefail
-          flake_json="$(mktemp)"
+          touch flake.json
+          flake_json="flake.json"
           # For Nix >= 2.14 we need --all-systems
           if [[ "${{inputs.nix_version}}" =~ 2.1[456789].* ]]; then
             all_systems="--all-systems"
