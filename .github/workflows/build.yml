@@ -263,10 +263,8 @@ jobs:
             )
           )')
 
-          echo "outputs.txt $LINENO"
           echo $flake_outputs | jq -r '.[] | "\(.top_attr).\(.system).\(.attr)"' > outputs.txt
 
-          echo "loop $LINENO"
           cat outputs.txt | while read line
           do
             attr=$(echo $line | cut -d '.' -f3)
@@ -283,11 +281,8 @@ jobs:
             touch flak_outputs.json
             echo "$flake_outputs" | jq . > flake_outputs.json  
 
-            echo "Disk Usage:"
-            df -h
           done
 
-          echo "collect nars $LINENO"
           nar_hashes=$(cat flake_outputs.json | jq 'map(.nar)')
 
           nars_to_build=$(curl -X 'POST' \
