@@ -290,7 +290,7 @@ jobs:
             'https://app.cachix.org/api/v1/cache/union/narinfo' \
             -H 'accept: application/json;charset=utf-8' \
             -H 'Content-Type: application/json;charset=utf-8' \
-            -d $nar_hashes)
+            -d "$nar_hashes")
 
           cat flake_outputs.json | jq --arg nars "$nars_to_build" 'map(select(.nar | inside($nars)))' > "$flake_json"
 
