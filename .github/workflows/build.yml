@@ -263,36 +263,25 @@ jobs:
             )
           )')
 
-          echo $flake_outputs | jq -r '.[] | "\(.top_attr).\(.system).\(.attr)"' > outputs.txt
+          touch flake_evals.json
+          nix run github:nix-community/nix-eval-jobs -- --check-cache-status --flake .#packages.x86_64-linux | jq -s 'map(.top_attr = "packages")' >> flake_evals.json
+          nix run github:nix-community/nix-eval-jobs -- --check-cache-status --flake .#checks.x86_64-linux | jq -s 'map(.top_attr = "checks")' >> flake_evals.json
+          nix run github:nix-community/nix-eval-jobs -- --check-cache-status --flake .#devShells.x86_64-linux | jq -s 'map(.top_attr = "checks")' >> flake_evals.json
 
-          cat outputs.txt | while read line
-          do
-            attr=$(echo $line | cut -d '.' -f3)
-            system=$(echo $line | cut -d '.' -f2)
-            top_attr=$(echo $line | cut -d '.' -f1)
-            nar=$(nix eval --quiet --raw .#$line | cut -d '/' -f4 | cut -d '-' -f1)
-            flake_outputs=$(echo $flake_outputs | jq \
-             --arg attr "$attr" \
-             --arg system "$system" \
-             --arg top_attr "$top_attr" \
-             --arg nar "$nar" \
-             'map(if (.attr == $attr) and (.system == $system) and (.top_attr == $top_attr) then .nar = $nar else . end)')
+          jq -s 'add' flake_evals.json > evals.json
 
-            touch flak_outputs.json
-            echo "$flake_outputs" | jq . > flake_outputs.json  
+          cat evals.json | jq '.[] | select(.isCached | not)' > to_build.json
 
-          done
-
-          nar_hashes=$(cat flake_outputs.json | jq 'map(.nar)')
-
-          nars_to_build=$(curl -X 'POST' \
-            'https://app.cachix.org/api/v1/cache/union/narinfo' \
-            -H 'accept: application/json;charset=utf-8' \
-            -H 'Content-Type: application/json;charset=utf-8' \
-            -d "$nar_hashes")
-
-          cat flake_outputs.json | jq --arg nars "$nars_to_build" 'map(select(.nar | inside($nars)))' > "$flake_json"
-
+          echo $flake_outputs | jq --slurpfile evals to_build.json '
+            ($evals | map(.top_attr)) as $top_attrs |
+            ($evals | map(.attr)) as $attrs |
+            map(
+              select(
+                ([.top_attr] | inside($top_attrs)) and
+                ([.attr] | inside($attrs))
+              )
+            )' > $flake_json
+          
           jq < "$flake_json" -rc 'map(
             . as $x | (${{inputs.label_builds}}) as $l | $x + {label: $l})|"builds=\(.)"' >> "$GITHUB_OUTPUT"
 
