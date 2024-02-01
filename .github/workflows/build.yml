@@ -279,7 +279,7 @@ jobs:
 
           touch flake_evals.json
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
-            nix run github:nix-community/nix-eval-jobs -- --workers $(nproc) --max-memory-size $(free -m  | grep ^Mem | tr -s ' ' | cut -d ' ' -f 3) --gc-roots-dir $(pwd)/gcroots --check-cache-status --flake .#"${{ inputs.eval_target }}" | jq -s 'map(.top_attr = "${{ inputs.eval_top_attr }}")' >> flake_evals.json
+            nix run github:nix-community/nix-eval-jobs -- --workers $(nproc) --max-memory-size $(free -m  | grep ^Mem | tr -s ' ' | cut -d ' ' -f 3) --gc-roots-dir $(pwd)/gcroots --check-cache-status --flake .#"${{ inputs.eval_target }}".x86_64-linux | jq -s 'map(.top_attr = "${{ inputs.eval_top_attr }}")' >> flake_evals.json
 
             echo "flake_evals.json:"
             cat flake_evals.json | jq .
