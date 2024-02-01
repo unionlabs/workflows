@@ -280,14 +280,12 @@ jobs:
           touch flake_evals.json
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
             nix run github:nix-community/nix-eval-jobs -- --workers $(nproc) --max-memory-size $(free -m  | grep ^Mem | tr -s ' ' | cut -d ' ' -f 3) --gc-roots-dir $(pwd)/gcroots --check-cache-status --flake .#"${{ inputs.eval_target }}" | jq -s 'map(.top_attr = "${{ inputs.eval_top_attr }}")' >> flake_evals.json
-          fi
 
-          echo "flake_evals.json:"
-          cat flake_evals.json | jq .
+            echo "flake_evals.json:"
+            cat flake_evals.json | jq .
 
-          cat evals.json | jq '.[] | select(.isCached | not)' > to_build.json
+            cat flake_evals.json | jq '.[] | select(.isCached | not)' > to_build.json
 
-          if [[ "${{ inputs.eval_target }}" != '' ]]; then
             echo $flake_outputs | jq --slurpfile evals to_build.json '
               ($evals | map(.top_attr)) as $top_attrs |
               ($evals | map(.attr)) as $attrs |
