@@ -288,7 +288,7 @@ jobs:
             echo "flake_evals.json:"
             cat flake_evals.json | jq .
 
-            cat flake_evals.json | jq 'add' > evals.json
+            jq -s 'add' flake_evals.json > evals.json
 
             echo "evals.json:"
             cat evals.json | jq .
