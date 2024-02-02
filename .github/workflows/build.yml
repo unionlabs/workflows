@@ -288,9 +288,6 @@ jobs:
 
             cat evals.json | jq '.[] | select(.isCached | not)' > to_build.json
 
-            echo "to_build.json:"
-            cat to_build.json | jq '.[] | .attr'
-
             echo "Filtering outputs with filter_builds"
             echo $flake_outputs | jq --slurpfile evals to_build.json '
                 map(
