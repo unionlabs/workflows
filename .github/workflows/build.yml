@@ -221,7 +221,7 @@ on:
         default: ''
         required: false
         description: |
-          To avoid collisions with outputs that have the same `attr` but different `top_attr`, a top_atter for the eval target can be supplied here.
+          To avoid collisions with outputs that have the same `attr` but different `top_attr`, a top_attr for the eval target can be supplied here.
 
 jobs:
 
