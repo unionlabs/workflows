@@ -288,12 +288,12 @@ jobs:
             echo "flake_evals.json:"
             cat flake_evals.json | jq .
 
-            cat flake_evals.json | jq 'add' > flake_evals.json
+            cat flake_evals.json | jq 'add' > evals.json
 
-            echo "flake_evals.json:"
-            cat flake_evals.json | jq .
+            echo "evals.json:"
+            cat evals.json | jq .
 
-            cat flake_evals.json | jq '.[] | select(.isCached | not)' > to_build.json
+            cat evals.json | jq '.[] | select(.isCached | not)' > to_build.json
 
             echo "Filtering outputs with filter_builds"
             echo $flake_outputs | jq --slurpfile evals to_build.json '
