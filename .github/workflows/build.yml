@@ -300,7 +300,7 @@ jobs:
                 map(
                   select(
                     (.top_attr) as $top_attr | (.system) as $system | (.attr) as $attr | 
-                    $evals | .[] | .[] | select(
+                    $evals | .[] | select(
                       (.top_attr == $top_attr) and 
                       (.system == $system) and 
                       (.attr == $attr)
