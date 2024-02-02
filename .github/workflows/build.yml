@@ -281,19 +281,15 @@ jobs:
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
             echo "Evaluating x86_64-linux outputs"
             nix run github:nix-community/nix-eval-jobs -- --workers $(nproc) --max-memory-size $(free -m  | grep ^Mem | tr -s ' ' | cut -d ' ' -f 3) --gc-roots-dir $(pwd)/gcroots --check-cache-status --flake .#"${{ inputs.eval_target }}".x86_64-linux | jq -s 'map(.top_attr = "${{ inputs.eval_top_attr }}")' >> flake_evals.json
-            echo "flake_evals.json:"
-            cat flake_evals.json | jq .
             echo "Evaluating aarch64-linux outputs"
             nix run github:nix-community/nix-eval-jobs -- --workers $(nproc) --max-memory-size $(free -m  | grep ^Mem | tr -s ' ' | cut -d ' ' -f 3) --gc-roots-dir $(pwd)/gcroots --check-cache-status --flake .#"${{ inputs.eval_target }}".aarch64-linux | jq -s 'map(.top_attr = "${{ inputs.eval_top_attr }}")' >> flake_evals.json
-            echo "flake_evals.json:"
-            cat flake_evals.json | jq .
 
             jq -s 'add' flake_evals.json > evals.json
 
-            echo "evals.json:"
-            cat evals.json | jq .
-
             cat evals.json | jq '.[] | select(.isCached | not)' > to_build.json
+
+            echo "to_build.json:"
+            cat to_build.json | jq '.[] | .attr'
 
             echo "Filtering outputs with filter_builds"
             echo $flake_outputs | jq --slurpfile evals to_build.json '
@@ -308,6 +304,9 @@ jobs:
                   )
                 )
               ' > $flake_json
+
+            echo "flake_json:"
+            cat $flake_json | jq .
           fi
             jq < "$flake_json" -rc 'map(
               . as $x | (${{inputs.label_builds}}) as $l | $x + {label: $l})|"builds=\(.)"' >> "$GITHUB_OUTPUT"
