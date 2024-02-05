@@ -313,7 +313,7 @@ jobs:
     name: ${{matrix.build.label}}
     needs: eval-flake
     runs-on: ubuntu-latest
-    if: ${{ needs.eval-flake.outputs.builds != "" }}
+    if: ${{ needs.eval-flake.outputs.builds != '' }}
     strategy:
       fail-fast: ${{ inputs.fail_fast }}
       matrix:
