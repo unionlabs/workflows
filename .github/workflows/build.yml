@@ -276,6 +276,7 @@ jobs:
               ${{inputs.filter_builds}}
             )
           )')
+          echo $flake_outputs | jq . > $flake_json
 
           touch flake_evals.json
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
