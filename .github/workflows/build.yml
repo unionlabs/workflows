@@ -301,10 +301,10 @@ jobs:
                   )
                 )
               ' > $flake_json
-
-            echo "flake_json:"
-            cat $flake_json | jq .
           fi
+
+            echo "Jobs to build:"
+            cat $flake_json | jq .
             jq < "$flake_json" -rc 'map(
               . as $x | (${{inputs.label_builds}}) as $l | $x + {label: $l})|"builds=\(.)"' >> "$GITHUB_OUTPUT"
           
