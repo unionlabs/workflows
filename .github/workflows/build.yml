@@ -276,6 +276,7 @@ jobs:
               ${{inputs.filter_builds}}
             )
           )')
+          echo $flake_outputs | jq . > $flake_json
 
           touch flake_evals.json
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
@@ -301,10 +302,10 @@ jobs:
                   )
                 )
               ' > $flake_json
-
-            echo "flake_json:"
-            cat $flake_json | jq .
           fi
+
+            echo "Jobs to build:"
+            cat $flake_json | jq .
             jq < "$flake_json" -rc 'map(
               . as $x | (${{inputs.label_builds}}) as $l | $x + {label: $l})|"builds=\(.)"' >> "$GITHUB_OUTPUT"
           
@@ -312,6 +313,7 @@ jobs:
     name: ${{matrix.build.label}}
     needs: eval-flake
     runs-on: ubuntu-latest
+    if: ${{ needs.eval-flake.outputs.builds != '[]' }}
     strategy:
       fail-fast: ${{ inputs.fail_fast }}
       matrix:
