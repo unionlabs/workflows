@@ -281,20 +281,43 @@ jobs:
           touch flake_evals.json
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
             echo "Evaluating x86_64-linux outputs"
-            nix run github:nix-community/nix-eval-jobs -- --workers $(nproc) --max-memory-size $(free -m  | grep ^Mem | tr -s ' ' | cut -d ' ' -f 3) --gc-roots-dir $(pwd)/gcroots --check-cache-status --flake .#"${{ inputs.eval_target }}".x86_64-linux | jq -s 'map(.top_attr = "${{ inputs.eval_top_attr }}")' >> flake_evals.json
-            echo "Evaluating aarch64-linux outputs"
-            nix run github:nix-community/nix-eval-jobs -- --workers $(nproc) --max-memory-size $(free -m  | grep ^Mem | tr -s ' ' | cut -d ' ' -f 3) --gc-roots-dir $(pwd)/gcroots --check-cache-status --flake .#"${{ inputs.eval_target }}".aarch64-linux | jq -s 'map(.top_attr = "${{ inputs.eval_top_attr }}")' >> flake_evals.json
+            nix eval --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
+              to_entries | map(
+                {
+                  top_attr: "${{ inputs.eval_top_attr}}",
+                  system: "x86_64-linux",
+                  attr: (.key), 
+                  nar: (.value | split("/")[3] | split("-")[0])
+                }
+              )
+            ' >> flake_evals.json
+            nix eval --json .#"${{ inputs.eval_target }}".aarch64-linux | jq '
+              to_entries | map(
+                {
+                  top_attr: "${{ inputs.eval_top_attr}}",
+                  system: "aarch64-linux",
+                  attr: (.key), 
+                  nar: (.value | split("/")[3] | split("-")[0])
+                }
+              )
+            ' >> flake_evals.json
 
             jq -s 'add' flake_evals.json > evals.json
 
-            cat evals.json | jq '.[] | select(.isCached | not)' > to_build.json
+            curl -X 'POST' \
+              'https://app.cachix.org/api/v1/cache/union/narinfo' \
+              -H 'accept: application/json;charset=utf-8' \
+              -H 'Content-Type: application/json;charset=utf-8' \
+              -d "$(cat evals.json | jq 'map(.nar)')" > nars_to_build.json
+            cat evals.json | jq --slurpfile nars_to_build nars_to_build.json '
+              map(select([.nar] | inside($nars_to_build | .[]))) | map(select(.attr == "uniond"))' > to_build.json
 
             echo "Filtering outputs with filter_builds"
             echo $flake_outputs | jq --slurpfile evals to_build.json '
                 map(
                   select(
                     (.top_attr) as $top_attr | (.system) as $system | (.attr) as $attr | 
-                    $evals | .[] | select(
+                    $evals | .[] | .[] | select(
                       (.top_attr == $top_attr) and 
                       (.system == $system) and 
                       (.attr == $attr)
