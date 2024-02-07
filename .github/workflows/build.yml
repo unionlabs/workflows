@@ -310,7 +310,7 @@ jobs:
               -H 'Content-Type: application/json;charset=utf-8' \
               -d "$(cat evals.json | jq 'map(.nar)')" > nars_to_build.json
             cat evals.json | jq --slurpfile nars_to_build nars_to_build.json '
-              map(select([.nar] | inside($nars_to_build | .[]))) | map(select(.attr == "uniond"))' > to_build.json
+              map(select([.nar] | inside($nars_to_build | .[])))' > to_build.json
 
             echo "Filtering outputs with filter_builds"
             echo $flake_outputs | jq --slurpfile evals to_build.json '
