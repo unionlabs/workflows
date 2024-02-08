@@ -312,6 +312,8 @@ jobs:
             cat evals.json | jq --slurpfile nars_to_build nars_to_build.json '
               map(select([.nar] | inside($nars_to_build | .[])))' > to_build.json
 
+            jq '.' to_build.json
+
             echo "Filtering outputs with filter_builds"
             echo $flake_outputs | jq --slurpfile evals to_build.json '
                 map(
