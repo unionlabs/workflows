@@ -227,7 +227,7 @@ jobs:
 
   eval-flake:
     name: "Evaluate flake"
-    runs-on: beefy-runner
+    runs-on: super-beefy-runner
     outputs:
       builds: ${{ steps.find-builds.outputs.builds }}
     steps:
