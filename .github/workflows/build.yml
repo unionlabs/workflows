@@ -227,7 +227,7 @@ jobs:
 
   eval-flake:
     name: "Evaluate flake"
-    runs-on: ubuntu-latest
+    runs-on: beefy-runner
     outputs:
       builds: ${{ steps.find-builds.outputs.builds }}
     steps:
