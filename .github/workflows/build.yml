@@ -231,6 +231,12 @@ jobs:
     outputs:
       builds: ${{ steps.find-builds.outputs.builds }}
     steps:
+      - name: 'Clean build folder'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
       - uses: actions/checkout@v4
       - name: Pre-evaluation script
         run: ${{inputs.pre_evaluation_script}}
