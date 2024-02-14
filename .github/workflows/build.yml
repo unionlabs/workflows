@@ -270,7 +270,10 @@ jobs:
           )')
           echo $flake_outputs | jq . > $flake_json
 
+
           touch flake_evals.json
+          echo "flake_evals.json"
+          jq . flake_evals.json
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
             echo "Evaluating x86_64-linux outputs"
             nix eval --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
@@ -303,6 +306,9 @@ jobs:
               -d "$(cat evals.json | jq 'map(.nar)')" > nars_to_build.json
             cat evals.json | jq --slurpfile nars_to_build nars_to_build.json '
               map(select([.nar] | inside($nars_to_build | .[])))' > to_build.json
+
+            echo "to_build.json"
+            jq . to_build.json
 
             echo "Filtering outputs with filter_builds"
             echo $flake_outputs | jq --slurpfile evals to_build.json '
