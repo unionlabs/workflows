@@ -237,6 +237,14 @@ jobs:
           rm -rf ./* || true
           rm -rf ./.??* || true
           ls -la ./
+      - uses: nixbuild/nix-quick-install-action@v26
+        with:
+          nix_on_tmpfs: false
+          nix_conf: |
+            experimental-features = nix-command flakes
+            access-tokens = ${{ secrets.access-tokens }}
+            ${{inputs.nix_conf}}
+          nix_version: ${{inputs.nix_version}}
       - uses: actions/checkout@v4
       - name: Pre-evaluation script
         run: ${{inputs.pre_evaluation_script}}
