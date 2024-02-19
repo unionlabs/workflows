@@ -282,7 +282,7 @@ jobs:
           touch aarch64-evals.json
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
             echo "Evaluating x86_64-linux outputs"
-            (nix eval --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
+            (nix eval --accept-flake-config --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
               to_entries | map(
                 {
                   top_attr: "${{ inputs.eval_top_attr}}",
@@ -292,7 +292,7 @@ jobs:
                 }
               )
             ' >> x86_64-evals.json) &
-            (nix eval --json .#"${{ inputs.eval_target }}".aarch64-linux | jq '
+            (nix eval --accept-flake-config --json .#"${{ inputs.eval_target }}".aarch64-linux | jq '
               to_entries | map(
                 {
                   top_attr: "${{ inputs.eval_top_attr}}",
