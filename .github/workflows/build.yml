@@ -243,6 +243,7 @@ jobs:
       - name: Find builds
         id: find-builds
         run: |
+          export NIX_CONFIG="access-tokens = ${{ secrets.access-tokens }}"
           set -eo pipefail
           touch flake.json
           flake_json="flake.json"
@@ -331,10 +332,12 @@ jobs:
               ' > $flake_json
           fi
 
-            echo "Jobs to build:"
-            cat $flake_json | jq .
-            jq < "$flake_json" -rc 'map(
-              . as $x | (${{inputs.label_builds}}) as $l | $x + {label: $l})|"builds=\(.)"' >> "$GITHUB_OUTPUT"
+          unset NIX_CONFIG
+
+          echo "Jobs to build:"
+          cat $flake_json | jq .
+          jq < "$flake_json" -rc 'map(
+            . as $x | (${{inputs.label_builds}}) as $l | $x + {label: $l})|"builds=\(.)"' >> "$GITHUB_OUTPUT"
           
   build:
     name: ${{matrix.build.label}}
