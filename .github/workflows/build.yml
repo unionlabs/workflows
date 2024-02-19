@@ -278,12 +278,11 @@ jobs:
           echo $flake_outputs | jq . > $flake_json
 
 
-          touch flake_evals.json
-          echo "flake_evals.json"
-          jq . flake_evals.json
+          touch x86_64-evals.json
+          touch aarch64-evals.json
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
             echo "Evaluating x86_64-linux outputs"
-            time nix eval --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
+            (nix eval --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
               to_entries | map(
                 {
                   top_attr: "${{ inputs.eval_top_attr}}",
@@ -292,8 +291,8 @@ jobs:
                   nar: (.value | split("/")[3] | split("-")[0])
                 }
               )
-            ' >> flake_evals.json
-            time nix eval --json .#"${{ inputs.eval_target }}".aarch64-linux | jq '
+            ' >> x86_64-evals.json) &
+            (nix eval --json .#"${{ inputs.eval_target }}".aarch64-linux | jq '
               to_entries | map(
                 {
                   top_attr: "${{ inputs.eval_top_attr}}",
@@ -302,9 +301,10 @@ jobs:
                   nar: (.value | split("/")[3] | split("-")[0])
                 }
               )
-            ' >> flake_evals.json
+            ' >> aarch64-evals.json) &
+            wait
 
-            jq -s 'add' flake_evals.json > evals.json
+            jq -s 'add' x86_64-evals.json aarch64-evals.json > evals.json
 
             curl -X 'POST' \
               'https://app.cachix.org/api/v1/cache/union/narinfo' \
