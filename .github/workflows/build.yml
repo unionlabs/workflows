@@ -283,7 +283,7 @@ jobs:
           jq . flake_evals.json
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
             echo "Evaluating x86_64-linux outputs"
-            nix eval --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
+            time nix eval --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
               to_entries | map(
                 {
                   top_attr: "${{ inputs.eval_top_attr}}",
@@ -293,7 +293,7 @@ jobs:
                 }
               )
             ' >> flake_evals.json
-            nix eval --json .#"${{ inputs.eval_target }}".aarch64-linux | jq '
+            time nix eval --json .#"${{ inputs.eval_target }}".aarch64-linux | jq '
               to_entries | map(
                 {
                   top_attr: "${{ inputs.eval_top_attr}}",
