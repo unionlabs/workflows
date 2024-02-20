@@ -227,7 +227,7 @@ jobs:
 
   eval-flake:
     name: "Evaluate flake"
-    runs-on: beefy-sausage-16-32-hil-1
+    runs-on: beefy-sausage-16-32-hel1-1
     outputs:
       builds: ${{ steps.find-builds.outputs.builds }}
     steps:
