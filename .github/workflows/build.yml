@@ -237,7 +237,10 @@ jobs:
           rm -rf ./* || true
           rm -rf ./.??* || true
           ls -la ./
+          git-lfs install
       - uses: actions/checkout@v4
+        with:
+          lfs: true
       - name: Pre-evaluation script
         run: ${{inputs.pre_evaluation_script}}
       - name: Find builds
