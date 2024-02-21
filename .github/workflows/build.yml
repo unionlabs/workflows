@@ -227,24 +227,26 @@ jobs:
 
   eval-flake:
     name: "Evaluate flake"
-    runs-on: beefy-runner
+    runs-on: beefy-sausage-16-32-hil-1
     outputs:
       builds: ${{ steps.find-builds.outputs.builds }}
     steps:
+      - name: 'Clean build folder'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
+          git-lfs install
       - uses: actions/checkout@v4
-      - uses: nixbuild/nix-quick-install-action@v26
         with:
-          nix_on_tmpfs: false
-          nix_conf: |
-            experimental-features = nix-command flakes
-            access-tokens = ${{ secrets.access-tokens }}
-            ${{inputs.nix_conf}}
-          nix_version: ${{inputs.nix_version}}
+          lfs: true
       - name: Pre-evaluation script
         run: ${{inputs.pre_evaluation_script}}
       - name: Find builds
         id: find-builds
         run: |
+          export NIX_CONFIG="access-tokens = ${{ secrets.access-tokens }}"
           set -eo pipefail
           touch flake.json
           flake_json="flake.json"
@@ -278,10 +280,12 @@ jobs:
           )')
           echo $flake_outputs | jq . > $flake_json
 
-          touch flake_evals.json
+
+          touch x86_64-evals.json
+          touch aarch64-evals.json
           if [[ "${{ inputs.eval_target }}" != '' ]]; then
             echo "Evaluating x86_64-linux outputs"
-            nix eval --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
+            (nix eval --accept-flake-config --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
               to_entries | map(
                 {
                   top_attr: "${{ inputs.eval_top_attr}}",
@@ -290,8 +294,8 @@ jobs:
                   nar: (.value | split("/")[3] | split("-")[0])
                 }
               )
-            ' >> flake_evals.json
-            nix eval --json .#"${{ inputs.eval_target }}".aarch64-linux | jq '
+            ' >> x86_64-evals.json) &
+            (nix eval --accept-flake-config --json .#"${{ inputs.eval_target }}".aarch64-linux | jq '
               to_entries | map(
                 {
                   top_attr: "${{ inputs.eval_top_attr}}",
@@ -300,9 +304,10 @@ jobs:
                   nar: (.value | split("/")[3] | split("-")[0])
                 }
               )
-            ' >> flake_evals.json
+            ' >> aarch64-evals.json) &
+            wait
 
-            jq -s 'add' flake_evals.json > evals.json
+            jq -s 'add' x86_64-evals.json aarch64-evals.json > evals.json
 
             curl -X 'POST' \
               'https://app.cachix.org/api/v1/cache/union/narinfo' \
@@ -311,6 +316,9 @@ jobs:
               -d "$(cat evals.json | jq 'map(.nar)')" > nars_to_build.json
             cat evals.json | jq --slurpfile nars_to_build nars_to_build.json '
               map(select([.nar] | inside($nars_to_build | .[])))' > to_build.json
+
+            echo "to_build.json"
+            jq . to_build.json
 
             echo "Filtering outputs with filter_builds"
             echo $flake_outputs | jq --slurpfile evals to_build.json '
@@ -327,10 +335,12 @@ jobs:
               ' > $flake_json
           fi
 
-            echo "Jobs to build:"
-            cat $flake_json | jq .
-            jq < "$flake_json" -rc 'map(
-              . as $x | (${{inputs.label_builds}}) as $l | $x + {label: $l})|"builds=\(.)"' >> "$GITHUB_OUTPUT"
+          unset NIX_CONFIG
+
+          echo "Jobs to build:"
+          cat $flake_json | jq .
+          jq < "$flake_json" -rc 'map(
+            . as $x | (${{inputs.label_builds}}) as $l | $x + {label: $l})|"builds=\(.)"' >> "$GITHUB_OUTPUT"
           
   build:
     name: ${{matrix.build.label}}
