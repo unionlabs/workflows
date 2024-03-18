@@ -375,7 +375,9 @@ jobs:
       - name: "Build ${{matrix.build.top_attr}}.${{matrix.build.system}}.${{matrix.build.attr}}"
         id: build
         run: |
-          git config lfs.https://github.com/${{ github.repository}}.git/info.access basic
+          git config lfs.https://github.com/${{ github.repository}}.git/info/lfs.access basic
+          git config lfs.transfer.maxretrydelay 128
+          git config lfs.transfer.maxretries 16
           touch build.json
 
           attempt=0
