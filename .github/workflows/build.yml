@@ -238,7 +238,7 @@ jobs:
           rm -rf ./.??* || true
           ls -la ./
           git-lfs install
-      - uses: nixbuild/nix-quick-install-action@28
+      - uses: nixbuild/nix-quick-install-action@v28
         with:
           nix_on_tmpfs: false
           nix_conf: |
