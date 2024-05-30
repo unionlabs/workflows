@@ -60,7 +60,7 @@ on:
     inputs:
       nix_version:
         type: string
-        default: '2.21.1'
+        default: '2.21.0'
         required: false
         description: |
           The version of Nix that should be used.
