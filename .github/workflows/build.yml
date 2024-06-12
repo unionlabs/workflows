@@ -256,11 +256,11 @@ jobs:
         run: |
           set -eo pipefail
           touch flake.json
-          if [[ "${{ secrets.GH_NIX_TOKEN }}" == "" ]]; then
+          if [[ "${{ secrets.GITHUB_TOKEN }}" = "" ]]; then
             echo "TOKEN IS EMPTY1!!!"
             exit 1
           fi
-          if [[ -z "${{ secrets.GH_NIX_TOKEN }}" ]]; then
+          if [[ -z "${{ secrets.GITHUB_TOKEN }}" ]]; then
             echo "TOKEN IS EMPTY2!!!"
             exit 1
           fi
