@@ -3,6 +3,10 @@ name: nixbuild-ci
 on:
   workflow_call:
     secrets:
+      org_token:
+        required: false
+        description: |
+          Provide super token to access other org repos.
       access-tokens:
         required: false
         description: |
@@ -222,12 +226,6 @@ on:
         required: false
         description: |
           To avoid collisions with outputs that have the same `attr` but different `top_attr`, a top_attr for the eval target can be supplied here.
-      org_token:
-        type: string
-        default: ''
-        required: false
-        description: |
-          Provide super token to access other org repos.
 
 jobs:
 
