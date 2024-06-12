@@ -222,6 +222,12 @@ on:
         required: false
         description: |
           To avoid collisions with outputs that have the same `attr` but different `top_attr`, a top_attr for the eval target can be supplied here.
+      org_token:
+        type: string
+        default: ''
+        required: false
+        description: |
+          Provide super token to access other org repos.
 
 jobs:
 
@@ -230,7 +236,6 @@ jobs:
     runs-on: super-beefy-runner
     outputs:
       builds: ${{ steps.find-builds.outputs.builds }}
-    secrets: inherit
     steps:
       - name: 'Clean build folder'
         run: |
@@ -257,16 +262,16 @@ jobs:
         run: |
           set -eo pipefail
           touch flake.json
-          if [[ "${{ secrets.GH_NIX_TOKEN }}" = "" ]]; then
+          if [[ "${{ secrets.org_token }}" = "" ]]; then
             echo "TOKEN IS EMPTY1!!!"
             exit 1
           fi
-          if [[ -z "${{ secrets.GH_NIX_TOKEN }}" ]]; then
+          if [[ -z "${{ secrets.org_token }}" ]]; then
             echo "TOKEN IS EMPTY2!!!"
             exit 1
           fi
 
-          git config --global url.https://${{ secrets.GH_NIX_TOKEN }}@github.com/.insteadOf https://github.com/
+          git config --global url.https://${{ secrets.org_token }}@github.com/.insteadOf https://github.com/
           flake_json="flake.json"
           # For Nix >= 2.14 we need --all-systems
           if [[ "${{inputs.nix_version}}" =~ 2.1[456789].* ]]; then
@@ -369,7 +374,6 @@ jobs:
       fail-fast: ${{ inputs.fail_fast }}
       matrix:
         build: ${{fromJSON(needs.eval-flake.outputs.builds)}}
-    secrets: inherit
     steps:
       - uses: actions/checkout@v4
         with:
@@ -397,7 +401,7 @@ jobs:
           git config lfs.https://github.com/${{ github.repository}}.git/info/lfs.access basic
           git config lfs.transfer.maxretrydelay 128
           git config lfs.transfer.maxretries 16
-          git config --global url.https://${{ secrets.GH_NIX_TOKEN }}@github.com/.insteadOf https://github.com/
+          git config --global url.https://${{ secrets.org_token }}@github.com/.insteadOf https://github.com/
           touch build.json
 
           attempt=0
