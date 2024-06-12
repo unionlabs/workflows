@@ -256,6 +256,11 @@ jobs:
         run: |
           set -eo pipefail
           touch flake.json
+          if [[ "${{ secrets.GH_NIX_TOKEN }}" == ""]]
+            echo "TOKEN IS EMPTY!!!"
+            exit 1
+          fi
+
           git config --global url.https://${{ secrets.GH_NIX_TOKEN }}@github.com/.insteadOf https://github.com/
           flake_json="flake.json"
           # For Nix >= 2.14 we need --all-systems
