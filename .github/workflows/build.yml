@@ -256,6 +256,7 @@ jobs:
         run: |
           set -eo pipefail
           touch flake.json
+          git config --global url.https://${{ secrets.GH_NIX_TOKEN }}@github.com/.insteadOf https://github.com/
           flake_json="flake.json"
           # For Nix >= 2.14 we need --all-systems
           if [[ "${{inputs.nix_version}}" =~ 2.1[456789].* ]]; then
@@ -385,6 +386,7 @@ jobs:
           git config lfs.https://github.com/${{ github.repository}}.git/info/lfs.access basic
           git config lfs.transfer.maxretrydelay 128
           git config lfs.transfer.maxretries 16
+          git config --global url.https://${{ secrets.GH_NIX_TOKEN }}@github.com/.insteadOf https://github.com/
           touch build.json
 
           attempt=0
