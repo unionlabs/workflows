@@ -230,6 +230,7 @@ jobs:
     runs-on: super-beefy-runner
     outputs:
       builds: ${{ steps.find-builds.outputs.builds }}
+    secrets: inherit
     steps:
       - name: 'Clean build folder'
         run: |
@@ -256,11 +257,11 @@ jobs:
         run: |
           set -eo pipefail
           touch flake.json
-          if [[ "${{ secrets.GITHUB_TOKEN }}" = "" ]]; then
+          if [[ "${{ secrets.GH_NIX_TOKEN }}" = "" ]]; then
             echo "TOKEN IS EMPTY1!!!"
             exit 1
           fi
-          if [[ -z "${{ secrets.GITHUB_TOKEN }}" ]]; then
+          if [[ -z "${{ secrets.GH_NIX_TOKEN }}" ]]; then
             echo "TOKEN IS EMPTY2!!!"
             exit 1
           fi
@@ -368,6 +369,7 @@ jobs:
       fail-fast: ${{ inputs.fail_fast }}
       matrix:
         build: ${{fromJSON(needs.eval-flake.outputs.builds)}}
+    secrets: inherit
     steps:
       - uses: actions/checkout@v4
         with:
