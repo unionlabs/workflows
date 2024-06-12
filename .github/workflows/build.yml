@@ -256,7 +256,7 @@ jobs:
         run: |
           set -eo pipefail
           touch flake.json
-          if [[ "${{ secrets.GH_NIX_TOKEN }}" == ""]]; then
+          if [[ "${{ secrets.GH_NIX_TOKEN }}" == "" ]]; then
             echo "TOKEN IS EMPTY1!!!"
             exit 1
           fi
