@@ -339,18 +339,13 @@ jobs:
             jq . to_build.json
 
             echo "Filtering outputs with filter_builds"
-            echo $flake_outputs | jq --slurpfile evals to_build.json '
-                map(
-                  select(
-                    (.top_attr) as $top_attr | (.system) as $system | (.attr) as $attr | 
-                    $evals | .[] | .[] | select(
-                      (.top_attr == $top_attr) and 
-                      (.system == $system) and 
-                      (.attr == $attr)
-                    ) != null
-                  )
+            jq '
+              map(
+                select(
+                  ${{inputs.filter_builds}}
                 )
-              ' > $flake_json
+              )
+            ' to_build.json > $flake_json
           fi
 
           unset NIX_CONFIG
