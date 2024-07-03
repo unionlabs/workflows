@@ -256,6 +256,9 @@ jobs:
         run: |
           set -eo pipefail
 
+          echo "NIX_VERSION: $NIX_VERSION"
+          echo "FLAKE_DIR: $FLAKE_DIR"
+          echo "EVAL_TARGET: $EVAL_TARGET"
 
           touch flake.json
           if [[ -n "${{ secrets.org_token }}" ]]; then
