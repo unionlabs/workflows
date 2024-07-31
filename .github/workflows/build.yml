@@ -231,20 +231,26 @@ jobs:
 
   eval-flake:
     name: "Evaluate flake"
-    runs-on: beefy-sausage-16-32-hil-1
+    runs-on: super-beefy-runner
     outputs:
       builds: ${{ steps.find-builds.outputs.builds }}
     steps:
-      - name: 'Clean build folder'
-        run: |
-          ls -la ./
-          rm -rf ./* || true
-          rm -rf ./.??* || true
-          ls -la ./
-          git-lfs install
       - uses: actions/checkout@v4
         with:
           lfs: true
+      - uses: nixbuild/nix-quick-install-action@v28
+        with:
+          nix_on_tmpfs: false
+          nix_conf: |
+            experimental-features = nix-command flakes
+            access-tokens = ${{ secrets.access-tokens }}
+            ${{inputs.nix_conf}}
+      - uses: nixbuild/nixbuild-action@968e447093b702c0ab3e78d53eea1c38da1b1d0a
+        with:
+          nixbuild_token: ${{secrets.nixbuild_token}}
+          caches: ${{inputs.caches}}
+          reuse-build-failures: ${{inputs.reuse-build-failures}}
+          reuse-build-timeouts: ${{inputs.reuse-build-timeouts}}
       - name: Pre-evaluation script
         run: ${{inputs.pre_evaluation_script}}
       - name: Find builds
@@ -368,7 +374,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: ${{ inputs.lfs }}
-      - uses: nixbuild/nix-quick-install-action@v26
+      - uses: nixbuild/nix-quick-install-action@v28
         with:
           nix_on_tmpfs: false
           nix_conf: |
