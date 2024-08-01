@@ -234,7 +234,6 @@ jobs:
     runs-on: super-beefy-runner
     outputs:
       builds: ${{ steps.find-builds.outputs.builds }}
-    secrets: inherit
     steps:
       - uses: actions/checkout@v4
         with:
