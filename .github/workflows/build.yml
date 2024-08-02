@@ -3,6 +3,10 @@ name: nixbuild-ci
 on:
   workflow_call:
     secrets:
+      org_token:
+        required: false
+        description: |
+          Provide super token to access other org repos.
       access-tokens:
         required: false
         description: |
@@ -60,7 +64,7 @@ on:
     inputs:
       nix_version:
         type: string
-        default: '2.14.1'
+        default: '2.21.0'
         required: false
         description: |
           The version of Nix that should be used.
@@ -227,65 +231,85 @@ jobs:
 
   eval-flake:
     name: "Evaluate flake"
-    runs-on: beefy-sausage-16-32-hil-1
+    runs-on: super-beefy-runner
     outputs:
       builds: ${{ steps.find-builds.outputs.builds }}
     steps:
-      - name: 'Clean build folder'
-        run: |
-          ls -la ./
-          rm -rf ./* || true
-          rm -rf ./.??* || true
-          ls -la ./
-          git-lfs install
       - uses: actions/checkout@v4
         with:
           lfs: true
+      - uses: nixbuild/nix-quick-install-action@v28
+        with:
+          nix_on_tmpfs: false
+          nix_conf: |
+            experimental-features = nix-command flakes
+            access-tokens = ${{ secrets.access-tokens }}
+            ${{inputs.nix_conf}}
+      - uses: nixbuild/nixbuild-action@968e447093b702c0ab3e78d53eea1c38da1b1d0a
+        with:
+          nixbuild_token: ${{secrets.nixbuild_token}}
+          caches: ${{inputs.caches}}
+          reuse-build-failures: ${{inputs.reuse-build-failures}}
+          reuse-build-timeouts: ${{inputs.reuse-build-timeouts}}
       - name: Pre-evaluation script
         run: ${{inputs.pre_evaluation_script}}
       - name: Find builds
         id: find-builds
+        env:
+          NIX_VERSION: ${{inputs.nix_version}}
+          FLAKE_DIR: ${{inputs.flake_directory}}
+          EVAL_TARGET: ${{ inputs.eval_target }}
         run: |
-          export NIX_CONFIG="access-tokens = ${{ secrets.access-tokens }}"
           set -eo pipefail
+
+          echo "NIX_VERSION: $NIX_VERSION"
+          echo "FLAKE_DIR: $FLAKE_DIR"
+          echo "EVAL_TARGET: $EVAL_TARGET"
+
           touch flake.json
-          flake_json="flake.json"
-          # For Nix >= 2.14 we need --all-systems
-          if [[ "${{inputs.nix_version}}" =~ 2.1[456789].* ]]; then
-            all_systems="--all-systems"
+          if [[ -n "${{ secrets.org_token }}" ]]; then
+            git config --global url.https://${{ secrets.org_token }}@github.com/.insteadOf https://github.com/
+            export NIX_CONFIG="access-tokens = ${{ secrets.org_token }}"
           else
-            all_systems=""
+            echo "No org_token provided"
+            export NIX_CONFIG="access-tokens = ${{ secrets.access-tokens }}"
           fi
-          nix flake show "./${{inputs.flake_directory}}" $all_systems --json > "$flake_json"
-          flake_outputs=$(cat "$flake_json" | jq -rc '{
-            checks: (.checks // {}), 
-            packages: (.packages // {}), 
-            devShells: (.devShells // {})
-          } | to_entries | map(
-            .key as $top_attr | .value | to_entries | map(
-              .key as $sys | .value | to_entries | map(
-                .key as $attr | {
-                  name: "",
-                  description: "",
-                  top_attr: $top_attr, 
-                  system: $sys, 
-                  attr: $attr
-                } + .value
+
+          flake_json="flake.json"
+          if [[ "$EVAL_TARGET" == '' ]]; then
+            # For Nix >= 2.14 we need --all-systems
+            if [[ "$NIX_VERSION" =~ 2.1[456789].* ]]; then
+              all_systems="--all-systems"
+            else
+              all_systems=""
+            fi
+            echo "flake show"
+            time (nix flake show "./$FLAKE_DIR" $all_systems --json | jq -rc '{
+              checks: (.checks // {}), 
+              packages: (.packages // {}), 
+              devShells: (.devShells // {})
+            } | to_entries | map(
+              .key as $top_attr | .value | to_entries | map(
+                .key as $sys | .value | to_entries | map(
+                  .key as $attr | {
+                    name: "",
+                    description: "",
+                    top_attr: $top_attr, 
+                    system: $sys, 
+                    attr: $attr
+                  } + .value
+                )
               )
-            )
-          ) | flatten | map(
-            select(
-              ${{inputs.filter_builds}}
-            )
-          )')
-          echo $flake_outputs | jq . > $flake_json
-
-
-          touch x86_64-evals.json
-          touch aarch64-evals.json
-          if [[ "${{ inputs.eval_target }}" != '' ]]; then
-            echo "Evaluating x86_64-linux outputs"
-            (nix eval --accept-flake-config --json .#"${{ inputs.eval_target }}".x86_64-linux | jq '
+            ) | flatten | map(
+              select(
+                ${{inputs.filter_builds}}
+              )
+            )' > $flake_json)
+          else
+            touch x86_64-evals.json
+            touch aarch64-evals.json
+            echo "Evaluating outputs"
+            time ((nix eval --accept-flake-config --json .#"$EVAL_TARGET".x86_64-linux | jq '
               to_entries | map(
                 {
                   top_attr: "${{ inputs.eval_top_attr}}",
@@ -295,7 +319,7 @@ jobs:
                 }
               )
             ' >> x86_64-evals.json) &
-            (nix eval --accept-flake-config --json .#"${{ inputs.eval_target }}".aarch64-linux | jq '
+            (nix eval --accept-flake-config --json .#"$EVAL_TARGET".aarch64-linux | jq '
               to_entries | map(
                 {
                   top_attr: "${{ inputs.eval_top_attr}}",
@@ -305,15 +329,15 @@ jobs:
                 }
               )
             ' >> aarch64-evals.json) &
-            wait
+            wait)
 
             jq -s 'add' x86_64-evals.json aarch64-evals.json > evals.json
 
-            curl -X 'POST' \
+            time (curl -X 'POST' \
               'https://app.cachix.org/api/v1/cache/union/narinfo' \
               -H 'accept: application/json;charset=utf-8' \
               -H 'Content-Type: application/json;charset=utf-8' \
-              -d "$(cat evals.json | jq 'map(.nar)')" > nars_to_build.json
+              -d "$(cat evals.json | jq 'map(.nar)')" > nars_to_build.json)
             cat evals.json | jq --slurpfile nars_to_build nars_to_build.json '
               map(select([.nar] | inside($nars_to_build | .[])))' > to_build.json
 
@@ -321,18 +345,13 @@ jobs:
             jq . to_build.json
 
             echo "Filtering outputs with filter_builds"
-            echo $flake_outputs | jq --slurpfile evals to_build.json '
-                map(
-                  select(
-                    (.top_attr) as $top_attr | (.system) as $system | (.attr) as $attr | 
-                    $evals | .[] | .[] | select(
-                      (.top_attr == $top_attr) and 
-                      (.system == $system) and 
-                      (.attr == $attr)
-                    ) != null
-                  )
+            jq '
+              map(
+                select(
+                  ${{inputs.filter_builds}}
                 )
-              ' > $flake_json
+              )
+            ' to_build.json > $flake_json
           fi
 
           unset NIX_CONFIG
@@ -354,8 +373,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          lfs: ${{ inputs.lfs }}
-      - uses: nixbuild/nix-quick-install-action@v26
+          lfs: true
+      - uses: nixbuild/nix-quick-install-action@v28
         with:
           nix_on_tmpfs: false
           nix_conf: |
@@ -378,6 +397,13 @@ jobs:
           git config lfs.https://github.com/${{ github.repository}}.git/info/lfs.access basic
           git config lfs.transfer.maxretrydelay 128
           git config lfs.transfer.maxretries 16
+
+          if [[ -n "${{ secrets.org_token }}" ]]; then
+            git config --global url.https://${{ secrets.org_token }}@github.com/.insteadOf https://github.com/
+          else
+            echo "No org_token provided"
+          fi
+
           touch build.json
 
           attempt=0
