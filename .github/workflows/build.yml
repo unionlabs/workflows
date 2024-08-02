@@ -373,7 +373,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          lfs: ${{ inputs.lfs }}
+          lfs: true
       - uses: nixbuild/nix-quick-install-action@v28
         with:
           nix_on_tmpfs: false
